@@ -12,8 +12,7 @@ jobs:
     steps: 
     # 코드 체크아웃
     - name: Checkout repository
-      uses: acti
-      ons/checkout@v2
+      uses: actions/checkout@v2
 
     # JDK 17 설정
     - name: Set up JDK 17
@@ -22,7 +21,9 @@ jobs:
         java-version: '17'
 
     - name: Build with Gradle
-      run: ./gradlew build
+      run: |
+        chmod +x ./gradlew
+        ./gradlew build
 
     - name: Set SSH key permissions
       run: |
@@ -37,18 +38,15 @@ jobs:
 
     - name: Add known_hosts
       run: |
-        echo "13.125.228.205 ssh-ed25519 |1|4RGMW90QRQDfvquUuqVXpqaBCB4=|uKaImnqzbQCzbmNwEgCTG210R3U= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP6vl1V+d8TdODsimSQTQIGgDjy4/pDb2hO6c5+q1F0O5ABYIERjOBcqaKXIdMb0+1NRRTIZrlcq4R8/Evx7jwI=" >> ~/.ssh/known_hosts
-
-    - name: 기존프로세스 종료 
-      run: |
-        kill -9 $(ps -ef | grep devops | grep -v grep | head -n 1 | awk '{print $2}') || true
+        ssh-keyscan -t ed25519 13.125.228.205 >> ~/.ssh/known_hosts
 
     - name: Deploy to Server
-      run: scp -i ~/.ssh/id_rsa -r build/libs/*.jar ubuntu@13.125.228.205:~/
+      run: scp build/libs/*.jar ubuntu@13.125.228.205:~/
 
 
     - name: Run SSH commands
       run: |
         ssh -i ~/.ssh/id_rsa ubuntu@13.125.228.205 << 'EOF'
           pkill -f 'java -jar' || true
-          nohup java -jar ~/app/devops_step0-0.0.1-SNAPSHOT.jar > log.txt 2>&1 &
+          nohup java -jar ~/devops_step0-0.0.1-SNAPSHOT.jar > log.txt 2>&1 &
+        EOF
